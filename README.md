@@ -50,7 +50,7 @@ Flags are defined inside the header:
 #endif
 ```
 
-⚠️ **Note:** Defining these macros before including the header may not always work. Recommended ways:
+> ⚠️ **Note:** Defining these macros before including the header may not always work. Recommended ways:
 
 1. Update the flags directly inside the header.
 2. Use compiler `-D` flags, for example:
