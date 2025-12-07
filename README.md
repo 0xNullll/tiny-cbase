@@ -2,7 +2,7 @@
 
 ## Description
 
-**Tiny CBase** is a lightweight, header-only C library for encoding and decoding binary data into various Base formats. It supports Base16, Base32, Base58, Base64, and Base85 (including Z85 and extended variants). The library is designed for performance and easy integration, providing inline helper functions, automatic length calculations, and optional whitespace handling.
+**Tiny CBase** is a lightweight C library (header + source) for encoding and decoding binary data into various Base formats. It supports Base16, Base32, Base58, Base64, and Base85 (including Z85 and extended variants). The library is designed for performance and easy integration, providing inline helper functions, automatic length calculations, and optional whitespace handling.
 
 ---
 
