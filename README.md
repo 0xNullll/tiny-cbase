@@ -110,6 +110,53 @@ if (!BASE85_CheckZ85Len(dec_len)) {
 }
 ```
 
+## Raw Encode/Decode Functions
+
+All low-level functions accept a mode_flags argument from the BASE_Encoding enum:
+
+```c
+typedef enum {
+    // Base16
+    BASE16_UPPER   = 0x01,
+    BASE16_LOWER   = 0x02,
+    BASE16_DECODE  = 0x04,
+    // Base32
+    BASE32_ENC         = 0x10,
+    BASE32_DEC         = 0x20,
+    BASE32_ENC_NOPAD   = 0x40,
+    BASE32_DEC_NOPAD   = 0x80,
+    // Base58
+    BASE58_ENC         = 0x100,
+    BASE58_DEC         = 0x200,
+    // Base64
+    BASE64_STD_ENC        = 0x400,
+    BASE64_STD_DEC        = 0x800,
+    BASE64_URL_ENC        = 0x1000,
+    BASE64_URL_DEC        = 0x2000,
+    BASE64_URL_ENC_NOPAD  = 0x4000,
+    BASE64_URL_DEC_NOPAD  = 0x8000,
+    // Base85
+    BASE85_STD_ENC     = 0x10000,
+    BASE85_STD_DEC     = 0x20000,
+    BASE85_EXT_ENC     = 0x40000,
+    BASE85_EXT_DEC     = 0x80000,
+    BASE85_Z85_ENC     = 0x100000,
+    BASE85_Z85_DEC     = 0x200000,
+    BASE85_IGNORE_WS   = 0x400000
+} BASE_Encoding;
+```
+
+Use these flags with the raw functions like:
+
+```c
+BASE16_Encode(data, data_len, out, &out_len, BASE16_UPPER);
+BASE32_Decode(encoded, enc_len, out, &out_len, BASE32_DEC | BASE32_DEC_NOPAD);
+BASE64_Encode(data, len, out, &out_len, BASE64_URL_ENC_NOPAD);
+BASE85_Decode(encoded, enc_len, out, &out_len, BASE85_STD_DEC | BASE85_IGNORE_WS);
+```
+
+> ⚠️ NOTE: The inline wrappers (like BASE16_EncodeUpper, BASE32_EncodeStd, etc.) automatically select the proper flag, so you only need raw functions if you want full control.
+
 ## Estimated Encoding Size Changes
 
 When encoding binary data, different schemes increase the output size by different ratios. The table below summarizes the typical increase in size compared to the original input:
