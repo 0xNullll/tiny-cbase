@@ -112,7 +112,7 @@ if (!BASE85_CheckZ85Len(dec_len)) {
 
 ## Raw Encode/Decode Functions
 
-All low-level functions accept a mode_flags argument from the BASE_Encoding enum:
+All low-level functions accept a 'mode_flags' argument from the 'BASE_Encoding' enum:
 
 ```c
 typedef enum {
@@ -149,13 +149,20 @@ typedef enum {
 Use these flags with the raw functions like:
 
 ```c
+// Base16
 BASE16_Encode(data, data_len, out, &out_len, BASE16_UPPER);
+
+// Base32 (NOPAD flags are functional)
 BASE32_Decode(encoded, enc_len, out, &out_len, BASE32_DEC | BASE32_DEC_NOPAD);
+
+// Base64
 BASE64_Encode(data, len, out, &out_len, BASE64_URL_ENC_NOPAD);
+
+// Base85
 BASE85_Decode(encoded, enc_len, out, &out_len, BASE85_STD_DEC | BASE85_IGNORE_WS);
 ```
 
-> ⚠️ NOTE: The inline wrappers (like BASE16_EncodeUpper, BASE32_EncodeStd, etc.) automatically select the proper flag, so you only need raw functions if you want full control.
+> ⚠️ NOTE: Inline wrappers (e.g., BASE16_EncodeUpper, BASE32_EncodeStdNoPad) automatically select the correct flags. Use raw functions only for fine-grained control or testing. Some flags are placeholders and may not have an effect in the current implementation.
 
 ## Estimated Encoding Size Changes
 
