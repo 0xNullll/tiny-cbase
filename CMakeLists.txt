@@ -21,7 +21,7 @@ else()
     target_compile_options(tiny_cbase PRIVATE -Wall -Wextra -O2)
 endif()
 
-# Optional: output directory
+# output directory
 set_target_properties(tiny_cbase PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
