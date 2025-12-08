@@ -1,3 +1,17 @@
+/*
+ * File: tiny_cbase.h
+ * Author: 0xNullll
+ * Description: Public interface for the Tiny CBase library.
+ *              Provides header-only functions for encoding and decoding
+ *              binary data in multiple Base formats:
+ *              Base16, Base32, Base58, Base64, Base85 (Standard, Extended, Z85).
+ *              Supports optional whitespace handling, feature flags for
+ *              selective inclusion of encodings, automatic buffer size
+ *              calculations, and inline helper functions for simplified usage.
+ * License: MIT
+ */
+
+
 #ifndef TINY_CBASE_H
 #define TINY_CBASE_H
 

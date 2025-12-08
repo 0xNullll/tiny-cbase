@@ -1,3 +1,16 @@
+/*
+ * File: tiny_cbase.c
+ * Author: 0xNullll
+ * Description: Implementation of the Tiny CBase library.
+ *              Provides functions for encoding and decoding binary data
+ *              into Base16, Base32, Base58, Base64, and Base85 variants
+ *              (Standard, Extended, Z85). Includes support for feature flags,
+ *              inline helpers, automatic buffer length calculations,
+ *              optional truncation on null, and safe fast operations.
+ * License: MIT
+ */
+
+
 #ifndef TINY_CBASE_IMPLEMENTATION
 #define TINY_CBASE_IMPLEMENTATION
 
