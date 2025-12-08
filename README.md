@@ -110,59 +110,88 @@ if (!BASE85_CheckZ85Len(dec_len)) {
 }
 ```
 
-## Raw Encode/Decode Functions
+## Raw Encode/Decode Function Flags
 
-All low-level functions accept a 'mode_flags' argument from the 'BASE_Encoding' enum:
+Tiny CBase uses a unified bit-flag system to configure all raw encode/decode functions.  
+Each flag falls into one of three categories:
 
-```c
-typedef enum {
-    // Base16
-    BASE16_UPPER   = 0x01,
-    BASE16_LOWER   = 0x02,
-    BASE16_DECODE  = 0x04,
-    // Base32
-    BASE32_ENC         = 0x10,
-    BASE32_DEC         = 0x20,
-    BASE32_ENC_NOPAD   = 0x40,
-    BASE32_DEC_NOPAD   = 0x80,
-    // Base58
-    BASE58_ENC         = 0x100,
-    BASE58_DEC         = 0x200,
-    // Base64
-    BASE64_STD_ENC        = 0x400,
-    BASE64_STD_DEC        = 0x800,
-    BASE64_URL_ENC        = 0x1000,
-    BASE64_URL_DEC        = 0x2000,
-    BASE64_URL_ENC_NOPAD  = 0x4000,
-    BASE64_URL_DEC_NOPAD  = 0x8000,
-    // Base85
-    BASE85_STD_ENC     = 0x10000,
-    BASE85_STD_DEC     = 0x20000,
-    BASE85_EXT_ENC     = 0x40000,
-    BASE85_EXT_DEC     = 0x80000,
-    BASE85_Z85_ENC     = 0x100000,
-    BASE85_Z85_DEC     = 0x200000,
-    BASE85_IGNORE_WS   = 0x400000
-} BASE_Encoding;
-```
+- **Functional Flags** – change encoding/decoding behavior (alphabet, padding, whitespace, etc.)  
+- **Length-Helper Flags** – consulted by `BASE_GetEncodeLen()` / `BASE_GetDecodeLen()` to compute required buffer sizes  
+- **Selector / Clarity Flags** – used by wrappers for consistency; do not affect encoding logic
 
-Use these flags with the raw functions like:
+---
 
-```c
-// Base16
-BASE16_Encode(data, data_len, out, &out_len, BASE16_UPPER);
+## 🔢 Base16 Flags
 
-// Base32 (NOPAD flags are functional)
-BASE32_Decode(encoded, enc_len, out, &out_len, BASE32_DEC | BASE32_DEC_NOPAD);
+| Flag | Meaning  | Affects Encoding?                   | Used by Length Helpers?        |
+|------|----------|-------------------------------------|--------------------------------|
+| `BASE16_UPPER`  | Encode using uppercase hex alphabet | ✔️ Yes               | ✔️ Yes |
+| `BASE16_LOWER`  | Encode using lowercase hex alphabet | ✔️ Yes               | ✔️ Yes |
+| `BASE16_DECODE` | Decode-mode selector                | ❌ No runtime effect | ✔️ Yes |
 
-// Base64
-BASE64_Encode(data, len, out, &out_len, BASE64_URL_ENC_NOPAD);
+> `BASE16_DECODE` does **not** change decoding logic — only signals the raw API that the operation is decoding.
 
-// Base85
-BASE85_Decode(encoded, enc_len, out, &out_len, BASE85_STD_DEC | BASE85_IGNORE_WS);
-```
+---
 
-> ⚠️ NOTE: Inline wrappers (e.g., BASE16_EncodeUpper, BASE32_EncodeStdNoPad) automatically select the correct flags. Use raw functions only for fine-grained control or testing. Some flags are placeholders and may not have an effect in the current implementation.
+## 🔤 Base32 Flags
+
+| Flag               | Meaning                          | Affects Encoding? | Used by Length Helpers? |
+|--------------------|----------------------------------|-------------------|-------------------------|
+| `BASE32_ENC`       | Standard Base32 encode selector  | ❌ No effect      | ✔️ Yes                 |
+| `BASE32_DEC`       | Standard Base32 decode selector  | ❌ No effect      | ✔️ Yes                 |
+| `BASE32_ENC_NOPAD` | Encode without `=` padding       | ✔️ Yes            | ✔️ Yes                 |
+| `BASE32_DEC_NOPAD` | Decode without requiring padding | ✔️ Yes            | ✔️ Yes                 |
+
+> `BASE32_ENC` and `BASE32_DEC` exist only for **clarity and length calculations**, not for the algorithm itself.
+
+---
+
+## 🔢 Base58 Flags
+
+| Flag         | Meaning         | Affects Encoding? | Used by Length Helpers? |
+|--------------|-----------------|-------------------|-------------------------|
+| `BASE58_ENC` | Encode selector | ❌ No effect     | ✔️ Yes                  |
+| `BASE58_DEC` | Decode selector | ❌ No effect     | ✔️ Yes                  |
+
+> Base58 has **one alphabet** and **no padding**, so flags are purely for wrappers and length calculations.
+
+---
+
+## 🧬 Base64 Flags (Standard + URL-safe)
+
+| Flag               | Meaning                                    | Affects Encoding? | Used by Length Helpers? |
+|--------------------|--------------------------------------------|-------------------|-------------------------|
+| `BASE64_STD_ENC`   | Standard Base64 encode (A–Z a–z 0–9 + /)   | ✔️ Yes           | ✔️ Yes                  |
+| `BASE64_STD_DEC`   | Standard Base64 decode                     | ✔️ Yes           | ✔️ Yes                  |
+| `BASE64_URL_ENC`   | URL-safe alphabet encode (A–Z a–z 0–9 - _) | ✔️ Yes           | ✔️ Yes                  |
+| `BASE64_URL_DEC`   | URL-safe alphabet decode                   | ✔️ Yes           | ✔️ Yes                  |
+| `BASE64_NOPAD_ENC` | Encode without `=` padding                 | ✔️ Yes           | ✔️ Yes                  |
+| `BASE64_NOPAD_DEC` | Decode without requiring padding           | ✔️ Yes           | ✔️ Yes                  |
+
+> Base64 always consults these flags because it supports two alphabets and optional padding.
+
+---
+
+## 🧱 Base85 Flags (Standard, Extended, Z85)
+
+| Flag               | Meaning                           | Affects Encoding? | Used by Length Helpers? |
+|--------------------|-----------------------------------|-------------------|-------------------------|
+| `BASE85_STD_ENC`   | Standard ASCII85 encode           | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_STD_DEC`   | Standard ASCII85 decode           | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_EXT_ENC`   | Extended Adobe ASCII85 encode     | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_EXT_DEC`   | Extended Adobe ASCII85 decode     | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_Z85_ENC`   | ZeroMQ Z85 encode                 | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_Z85_DEC`   | ZeroMQ Z85 decode                 | ✔️ Yes           | ✔️ Yes                  |
+| `BASE85_IGNORE_WS` | Ignore whitespace during decoding | ✔️ Yes           | ❌ No                   |
+
+> `BASE85_IGNORE_WS` only affects decoding functions, allowing input with spaces, tabs, or newlines to be ignored.
+
+---
+
+**Note:** Wrappers like `BASE16_EncodeUpper()`, `BASE32_EncodeStdNoPad()`, or `BASE64_EncodeUrlNoPad()` automatically select the correct flags for convenience.  
+Raw functions are only needed if you want **manual control over behavior** or for testing.
+
+---
 
 ## Estimated Encoding Size Changes
 
