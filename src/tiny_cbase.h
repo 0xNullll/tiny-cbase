@@ -40,44 +40,17 @@ extern "C" {
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
-typedef enum {
-    // --- Base16 / Hex ---
-    BASE16_UPPER       = 0x01,  
-    BASE16_LOWER       = 0x02,  
-    BASE16_DECODE      = 0x04,
-
-    // --- Base32 ---
-    BASE32_ENC         = 0x10,
-    BASE32_DEC         = 0x20,
-    BASE32_ENC_NOPAD   = 0x40,
-    BASE32_DEC_NOPAD   = 0x80,
-
-    // --- Base58 ---
-    BASE58_ENC         = 0x100,
-    BASE58_DEC         = 0x200,
-
-    // --- Base64 ---
-    BASE64_STD_ENC        = 0x400,
-    BASE64_STD_DEC        = 0x800,
-    BASE64_URL_ENC        = 0x1000,
-    BASE64_URL_DEC        = 0x2000,
-    BASE64_URL_ENC_NOPAD  = 0x4000,
-    BASE64_URL_DEC_NOPAD  = 0x8000,
-
-    // --- Base85 ---
-    BASE85_STD_ENC     = 0x10000,   
-    BASE85_STD_DEC     = 0x20000,
-    BASE85_EXT_ENC     = 0x40000,   
-    BASE85_EXT_DEC     = 0x80000,
-    BASE85_Z85_ENC     = 0x100000,  
-    BASE85_Z85_DEC     = 0x200000,
-    BASE85_IGNORE_WS   = 0x400000
-} BASE_Encoding;
-
 //
 // --- Function prototypes and Length macros ---
 //
 #if TINY_CBASE_ENABLE_BASE16
+#define BASE16_UPPER  0x01
+#define BASE16_LOWER  0x02
+
+// Decode flag. Note: also consulted by helper functions that compute
+// required output buffer lengths (no effect on decoding logic itself).
+#define BASE16_DECODE 0x04
+
 #define BASE16_ENC_LEN(data_len) ((size_t)(data_len)*2+1)
 #define BASE16_DEC_LEN(data_len) ((size_t)(data_len)/2)
 
@@ -93,6 +66,14 @@ static FORCE_INLINE bool BASE16_EncodeLower(const uint8_t *data, size_t data_len
 #endif
 
 #if TINY_CBASE_ENABLE_BASE32
+// Standard encode/decode flag (optional; mainly for clarity). Also used by length helpers.
+#define BASE32_ENC       0x10
+#define BASE32_DEC       0x20
+
+// Encode/Decode without '=' padding (affects behavior). Also used by length helpers.
+#define BASE32_ENC_NOPAD 0x40
+#define BASE32_DEC_NOPAD 0x80
+
 #define BASE32_ENC_LEN(data_len) (8*(((size_t)(data_len)+4)/5)+1)
 #define BASE32_DEC_LEN(data_len) (5*((size_t)(data_len)/8))
 
@@ -115,6 +96,11 @@ static FORCE_INLINE bool BASE32_DecodeStdNoPad(const char *encoded_data, size_t 
 #endif
 
 #if TINY_CBASE_ENABLE_BASE58
+// Standard encode/decode flag; Base58 has a single mode, so this flag has no runtime effect.
+// Used only by length-calculation helpers (optional for the user).
+#define BASE58_ENC 0x100
+#define BASE58_DEC 0x200
+
 #define BASE58_ENC_LEN(data_len) ((size_t)((data_len)*138/100+2))
 #define BASE58_DEC_LEN(str_len)  ((size_t)((str_len)*733/1000+1))
 
@@ -123,6 +109,18 @@ bool BASE58_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_de
 #endif
 
 #if TINY_CBASE_ENABLE_BASE64
+// Standard Base64 encode/decode (changes alphabet). Used by length helpers.
+#define BASE64_STD_ENC        0x400
+#define BASE64_STD_DEC        0x800
+
+// URL-safe Base64 encode/Decode (uses URL alphabet).
+#define BASE64_URL_ENC        0x1000
+#define BASE64_URL_DEC        0x2000
+
+// Disable '=' padding (applies to both STD and URL modes).
+#define BASE64_NOPAD_ENC      0x4000
+#define BASE64_NOPAD_DEC      0x8000
+
 #define BASE64_ENC_LEN(data_len) (4*(((size_t)(data_len)+2)/3)+1)
 #define BASE64_DEC_LEN(data_len) (3*((size_t)(data_len)/4))
 
@@ -136,6 +134,13 @@ static FORCE_INLINE bool BASE64_DecodeStd(const char *encoded_data, size_t encod
     return BASE64_Decode(encoded_data, encoded_len, out_decoded, out_decoded_len, BASE64_STD_DEC);
 }
 
+static FORCE_INLINE bool BASE64_EncodeStdNoPad(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len) {
+    return BASE64_Encode(data, data_len, out_encoded, out_encoded_len, BASE64_STD_ENC | BASE64_NOPAD_ENC);
+}
+static FORCE_INLINE bool BASE64_DecodeStdNoPad(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len) {
+    return BASE64_Decode(encoded_data, encoded_len, out_decoded, out_decoded_len, BASE64_STD_DEC | BASE64_NOPAD_ENC);
+}
+
 static FORCE_INLINE bool BASE64_EncodeUrl(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len) {
     return BASE64_Encode(data, data_len, out_encoded, out_encoded_len, BASE64_URL_ENC);
 }
@@ -144,15 +149,23 @@ static FORCE_INLINE bool BASE64_DecodeUrl(const char *encoded_data, size_t encod
 }
 
 static FORCE_INLINE bool BASE64_EncodeUrlNoPad(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len) {
-    return BASE64_Encode(data, data_len, out_encoded, out_encoded_len, BASE64_URL_ENC | BASE64_URL_ENC_NOPAD);
+    return BASE64_Encode(data, data_len, out_encoded, out_encoded_len, BASE64_URL_ENC | BASE64_NOPAD_ENC);
 }
 static FORCE_INLINE bool BASE64_DecodeUrlNoPad(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len) {
-    return BASE64_Decode(encoded_data, encoded_len, out_decoded, out_decoded_len, BASE64_URL_DEC | BASE64_URL_DEC_NOPAD);
+    return BASE64_Decode(encoded_data, encoded_len, out_decoded, out_decoded_len, BASE64_URL_DEC | BASE64_NOPAD_ENC);
 }
 
 #endif
 
 #if TINY_CBASE_ENABLE_BASE85
+#define BASE85_STD_ENC   0x10000   
+#define BASE85_STD_DEC   0x20000
+#define BASE85_EXT_ENC   0x40000   
+#define BASE85_EXT_DEC   0x80000
+#define BASE85_Z85_ENC   0x100000  
+#define BASE85_Z85_DEC   0x200000
+#define BASE85_IGNORE_WS 0x400000
+
 #define BASE85_ENC_LEN(data_len) (((size_t)(data_len)+3)/4*5+1)
 #define BASE85_DEC_LEN(data_len) ((size_t)(data_len)/5*4+4)
 
@@ -212,7 +225,7 @@ static FORCE_INLINE size_t BASE_GetEncodeLen(size_t data_len, uint32_t mode) {
 #endif
 
 #if TINY_CBASE_ENABLE_BASE64
-    if (mode & (BASE64_STD_ENC | BASE64_URL_ENC | BASE64_URL_ENC_NOPAD)) {
+    if (mode & (BASE64_STD_ENC | BASE64_URL_ENC | BASE64_NOPAD_ENC)) {
         return BASE64_ENC_LEN(data_len);
     }
 #endif
@@ -248,7 +261,7 @@ static FORCE_INLINE size_t BASE_GetDecodeLen(size_t data_len, uint32_t mode) {
 #endif
 
 #if TINY_CBASE_ENABLE_BASE64
-    if (mode & (BASE64_STD_DEC | BASE64_URL_DEC | BASE64_URL_DEC_NOPAD)) {
+    if (mode & (BASE64_STD_DEC | BASE64_URL_DEC | BASE64_NOPAD_DEC)) {
         return BASE64_DEC_LEN(data_len);
     }
 #endif

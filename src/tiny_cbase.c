@@ -354,7 +354,7 @@ bool BASE64_Encode(const uint8_t *raw_data, size_t raw_len, char *out_encoded, s
     if (!raw_data || raw_len == 0 || !out_encoded || !out_encoded_len) return false;
 
     bool url_safe = (mode_flags & BASE64_URL_ENC) != 0;
-    bool no_pad   = (mode_flags & BASE64_URL_ENC_NOPAD) != 0;
+    bool no_pad   = (mode_flags & BASE64_NOPAD_ENC) != 0;
 
     const char *enc_table = url_safe ? BASE64_URL_SAFE_TABLE : BASE64_ENC_TABLE;
     size_t out_index = 0;
@@ -395,13 +395,17 @@ bool BASE64_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_de
     }
 #endif // BASE_TRUNCATE_ON_NULL
 
-    bool url_safe = (mode_flags & BASE64_URL_DEC) != 0;
-    bool no_pad   = (mode_flags & BASE64_URL_DEC_NOPAD) != 0;
+    bool isStd = (mode_flags & BASE64_STD_DEC) != 0;
+    bool isUrlSafe = (mode_flags & BASE64_URL_DEC) != 0;
+    bool noPad = (mode_flags & BASE64_NOPAD_DEC) != 0;
 
-    const char start_char = url_safe ? BASE64_URL_SAFE_MIN : BASE64_MIN;
-    const int8_t *rev_table = url_safe ? BASE64_REV_URL_SAFE_TABLE : BASE64_REV_TABLE;
+    // Only check padding rules if standard Base64 or URL-safe with padding
+    if ((isStd || isUrlSafe) && !noPad && (encoded_len % 4 != 0)) {
+        return false; // invalid length
+    }
 
-    if (!url_safe && !no_pad && (encoded_len % 4 != 0)) return false;
+    const char start_char = isUrlSafe ? BASE64_URL_SAFE_MIN : BASE64_MIN;
+    const int8_t *rev_table = isUrlSafe ? BASE64_REV_URL_SAFE_TABLE : BASE64_REV_TABLE;
 
     size_t out_index = 0;
 

@@ -13,7 +13,7 @@ void print_usage(const char *prog) {
     printf("  base16_upper, base16_lower\n");
     printf("  base32_std, base32_std_nopad\n");
     printf("  base58\n");
-    printf("  base64_std, base64_url, base64_url_nopad\n");
+    printf("  base64_std, base64_std_nopad, base64_url, base64_url_nopad\n");
     printf("  base85_std, base85_ext, base85_z85\n");
 }
 
@@ -35,9 +35,9 @@ int main(int argc, char *argv[]) {
     if (strcmp(base_flag, "base16_upper") == 0 || strcmp(base_flag, "base16_lower") == 0 ||
         strcmp(base_flag, "base32_std") == 0 || strcmp(base_flag, "base32_std_nopad") == 0 ||
         strcmp(base_flag, "base58") == 0 || strcmp(base_flag, "base64_std") == 0 ||
-        strcmp(base_flag, "base64_url") == 0 || strcmp(base_flag, "base64_url_nopad") == 0 ||
-        strcmp(base_flag, "base85_std") == 0 || strcmp(base_flag, "base85_ext") == 0 ||
-        strcmp(base_flag, "base85_z85") == 0) {
+        strcmp(base_flag, "base64_std_nopad") == 0 || strcmp(base_flag, "base64_url") == 0 ||
+        strcmp(base_flag, "base64_url_nopad") == 0 || strcmp(base_flag, "base85_std") == 0 ||
+        strcmp(base_flag, "base85_ext") == 0 || strcmp(base_flag, "base85_z85") == 0) {
         is_hex = false; // treat input as string for raw encoding
     }
 
@@ -76,6 +76,8 @@ int main(int argc, char *argv[]) {
             ok = BASE58_Encode(input_buf, input_len, encoded, &enc_len);
         } else if (strcmp(base_flag, "base64_std") == 0) {
             ok = BASE64_EncodeStd(input_buf, input_len, encoded, &enc_len);
+        } else if (strcmp(base_flag, "base64_std_nopad") == 0) {
+            ok = BASE64_EncodeStdNoPad(input_buf, input_len, encoded, &enc_len);
         } else if (strcmp(base_flag, "base64_url") == 0) {
             ok = BASE64_EncodeUrl(input_buf, input_len, encoded, &enc_len);
         } else if (strcmp(base_flag, "base64_url_nopad") == 0) {
@@ -112,6 +114,8 @@ int main(int argc, char *argv[]) {
             ok = BASE58_Decode(encoded, enc_len, decoded, &dec_len);
         } else if (strcmp(base_flag, "base64_std") == 0) {
             ok = BASE64_DecodeStd(encoded, enc_len, decoded, &dec_len);
+        } else if (strcmp(base_flag, "base64_std_nopad") == 0) {
+            ok = BASE64_DecodeStdNoPad(encoded, enc_len, decoded, &dec_len);
         } else if (strcmp(base_flag, "base64_url") == 0) {
             ok = BASE64_DecodeUrl(encoded, enc_len, decoded, &dec_len);
         } else if (strcmp(base_flag, "base64_url_nopad") == 0) {
