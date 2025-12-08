@@ -1,4 +1,4 @@
-#include "tiny_cbase.h"
+#include "../src/tiny_cbase.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
