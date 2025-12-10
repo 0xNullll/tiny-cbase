@@ -285,7 +285,7 @@ bool BASE58_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_de
     size_t zcount = 0;
     while (zcount < encoded_len && encoded_data[zcount] == BASE58_LEADING_ZERO) zcount++;
 
-    // Approx max size: 0.733 * digits
+    // Approx max size: 0.733 * digits + 8, gives enough room for intermediate carry/overflow handling.
     size_t size = BASE58_DEC_LEN(encoded_len - zcount);
     uint8_t buf[size];
     memset(buf, 0, size);
@@ -574,6 +574,7 @@ bool BASE85_Encode(const uint8_t *encoded_data, size_t encoded_len, char *out_de
         }
     }
 
+    out_decoded[index] = '\0';
     *out_decoded_len = index;
     return true;
 }
