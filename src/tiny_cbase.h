@@ -65,8 +65,9 @@ extern "C" {
 // required output buffer lengths (no effect on decoding logic itself).
 #define BASE16_DECODE 0x04
 
-#define BASE16_ENC_LEN(data_len) ((size_t)(data_len)*2+1)
-#define BASE16_DEC_LEN(data_len) ((size_t)(data_len)/2)
+// Base16 (RFC 3548) length macros
+#define BASE16_ENC_LEN(data_len) (((size_t)(data_len) * 2) + 2)  // +2 for '\0' and safety
+#define BASE16_DEC_LEN(data_len) ((size_t)(data_len) / 2 + 1) // +1 for safety
 
 bool BASE16_Encode(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len, int mode_flags);
 bool BASE16_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len);
@@ -88,8 +89,9 @@ static FORCE_INLINE bool BASE16_EncodeLower(const uint8_t *data, size_t data_len
 #define BASE32_ENC_NOPAD 0x40
 #define BASE32_DEC_NOPAD 0x80
 
-#define BASE32_ENC_LEN(data_len) (8*(((size_t)(data_len)+4)/5)+1)
-#define BASE32_DEC_LEN(data_len) (5*((size_t)(data_len)/8))
+// Base32 (RFC 4648) length macros
+#define BASE32_ENC_LEN(data_len) (8 * (((size_t)(data_len) + 4) / 5) + 2) // +2 for '\0'
+#define BASE32_DEC_LEN(data_len) (((size_t)(data_len) * 5 + 7) / 8 + 1) // +1 for safety
 
 bool BASE32_Encode(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len, int mode_flags);
 bool BASE32_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len, int mode_flags);
@@ -115,8 +117,13 @@ static FORCE_INLINE bool BASE32_DecodeStdNoPad(const char *encoded_data, size_t 
 #define BASE58_ENC 0x100
 #define BASE58_DEC 0x200
 
-#define BASE58_ENC_LEN(data_len) ((size_t)((data_len)*138/100+2))
-#define BASE58_DEC_LEN(str_len)  ((size_t)((str_len)*733/1000+1))
+// Maximum Base58 encoded length for `data_len` bytes
+// ceil(data_len * log(256)/log(58)) + 2 for '\0' and leading zeros
+#define BASE58_ENC_LEN(data_len) ((size_t)((data_len) * 138 / 100 + 2))
+
+// Maximum decoded length for Base58 string of `str_len` characters
+// ceil(str_len * log(58)/log(256)) +8 bytes gives enough room for intermediate carry/overflow handling.
+#define BASE58_DEC_LEN(str_len)  ((size_t)((str_len) * 733 / 1000 + 8))
 
 bool BASE58_Encode(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len);
 bool BASE58_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len);
@@ -135,8 +142,9 @@ bool BASE58_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_de
 #define BASE64_NOPAD_ENC      0x4000
 #define BASE64_NOPAD_DEC      0x8000
 
-#define BASE64_ENC_LEN(data_len) (4*(((size_t)(data_len)+2)/3)+1)
-#define BASE64_DEC_LEN(data_len) (3*((size_t)(data_len)/4))
+// Base64 (RFC 4648) length macros
+#define BASE64_ENC_LEN(data_len) (4 * (((size_t)(data_len) + 2) / 3) + 2) // +2 for '\0' and safety
+#define BASE64_DEC_LEN(data_len) (((size_t)(data_len) + 3) / 4 * 3 + 1) // +1 for safety
 
 bool BASE64_Encode(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len, int mode_flags);
 bool BASE64_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len, int mode_flags);
@@ -180,8 +188,13 @@ static FORCE_INLINE bool BASE64_DecodeUrlNoPad(const char *encoded_data, size_t 
 #define BASE85_Z85_DEC   0x200000
 #define BASE85_IGNORE_WS 0x400000
 
-#define BASE85_ENC_LEN(data_len) (((size_t)(data_len)+3)/4*5+1)
-#define BASE85_DEC_LEN(data_len) ((size_t)(data_len)/5*4+4)
+// ASCII85
+#define ASCII85_ENC_LEN(data_len) (((size_t)(data_len) + 3) / 4 * 5 + 2) // +2 for '\0' and safety
+#define ASCII85_DEC_LEN(data_len) ((size_t)(data_len) / 5 * 4 + 4 + 1) // +1 for safety
+
+// Z85
+#define Z85_ENC_LEN(data_len) (((size_t)(data_len) / 4) * 5 + 2) // +2 for '\0' and safety
+#define Z85_DEC_LEN(data_len) ((size_t)(data_len) / 5 * 4 + 1) // +1 for safety
 
 bool BASE85_Encode(const uint8_t *data, size_t data_len, char *out_encoded, size_t *out_encoded_len, int mode_flags);
 bool BASE85_Decode(const char *encoded_data, size_t encoded_len, uint8_t *out_decoded, size_t *out_decoded_len, int mode_flags);
@@ -246,7 +259,11 @@ static FORCE_INLINE size_t BASE_GetEncodeLen(size_t data_len, uint32_t mode) {
 
 #if TINY_CBASE_ENABLE_BASE85
     if (mode & (BASE85_STD_ENC | BASE85_EXT_ENC | BASE85_Z85_ENC)) {
-        return BASE85_ENC_LEN(data_len);
+        if (mode & (BASE85_Z85_ENC)) {
+            return Z85_ENC_LEN(data_len);
+        } else {
+            return ASCII85_ENC_LEN(data_len);
+        }
     }
 #endif
 
@@ -282,7 +299,11 @@ static FORCE_INLINE size_t BASE_GetDecodeLen(size_t data_len, uint32_t mode) {
 
 #if TINY_CBASE_ENABLE_BASE85
     if (mode & (BASE85_STD_DEC | BASE85_EXT_DEC | BASE85_Z85_DEC)) {
-        return BASE85_DEC_LEN(data_len);
+        if (mode & (BASE85_Z85_DEC)) {
+            return Z85_DEC_LEN(data_len);
+        } else {
+            return ASCII85_DEC_LEN(data_len);
+        }
     }
 #endif
 
